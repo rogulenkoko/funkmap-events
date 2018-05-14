@@ -1,11 +1,13 @@
-﻿using Microsoft.AspNetCore.Authentication.OAuth;
+﻿using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
-namespace Funkmsp.Events.Web
+namespace Funkmap.Events.Web
 {
     public class Startup
     {
@@ -21,7 +23,24 @@ namespace Funkmsp.Events.Web
         {
             services.AddMvc();
 
-            services.AddAuthentication();
+            var key = "funkmap";
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.RequireHttpsMetadata = false;
+                    options.SaveToken = true;
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateAudience = true,
+                        ValidateIssuer = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidAudience = "funkmap-service",
+                        ValidIssuer = "https://bandmap-api.net",
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+                    };
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -31,7 +50,6 @@ namespace Funkmsp.Events.Web
             {
                 app.UseDeveloperExceptionPage();
             }
-            
 
             app.UseAuthentication();
 
