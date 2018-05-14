@@ -1,6 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using Funkmap.Events.Web.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -20,10 +20,9 @@ namespace Funkmap.Events.Web
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddMvc();
+        { 
 
-            var key = "funkmap";
+            var authOptions = new FunkmapJwtOptions(Configuration);
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -34,13 +33,15 @@ namespace Funkmap.Events.Web
                     {
                         ValidateAudience = true,
                         ValidateIssuer = true,
-                        ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-                        ValidAudience = "funkmap-service",
-                        ValidIssuer = "https://bandmap-api.net",
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+                        ValidateLifetime = true,
+                        ValidIssuer = authOptions.Issuer,
+                        ValidAudience = authOptions.Audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(authOptions.Key))
                     };
                 });
+
+            services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

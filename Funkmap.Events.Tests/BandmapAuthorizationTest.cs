@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -18,11 +19,17 @@ namespace Funkmap.Events.Tests
     public class BandmapAuthorizationTest
     {
         private readonly HttpClient _client;
+        private readonly IConfiguration _configuration;
 
         public BandmapAuthorizationTest()
         {
+            _configuration = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json").Build();
+
             var server = new TestServer(new WebHostBuilder()
-                .UseStartup<Startup>());
+                .UseStartup<Startup>()
+                .UseConfiguration(_configuration)
+            );
             _client = server.CreateClient();
         }
 
@@ -33,11 +40,9 @@ namespace Funkmap.Events.Tests
             var response = _client.PostAsync("/api/event", null).GetAwaiter().GetResult();
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
 
-
-            //var bandmapApiUrl = "http://bandmap-api.azurewebsites.net/api";
-            var bandmapApiUrl = "http://localhost/api";
-            var bandmapLogin = "demo";
-            var bandmapPassword = "demo";
+            var bandmapApiUrl = _configuration["Auth:BandmapTokenUrl"];
+            var bandmapLogin = _configuration["Auth:BandmapLogin"];
+            var bandmapPassword = _configuration["Auth:BandmapPassword"];
 
             String token;
 
@@ -54,7 +59,7 @@ namespace Funkmap.Events.Tests
                         new KeyValuePair<string, string>("client_secret", "funkmap"),
                     }),
                     Method = HttpMethod.Post,
-                    RequestUri = new Uri($"{bandmapApiUrl}/token")
+                    RequestUri = new Uri(bandmapApiUrl)
                 };
 
                 HttpResponseMessage loginResponse = httpClient.SendAsync(request).GetAwaiter().GetResult();
