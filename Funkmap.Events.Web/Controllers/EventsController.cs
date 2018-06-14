@@ -7,6 +7,8 @@ namespace Funkmap.Events.Web.Controllers
     [Route("api/event")]
     public class EventsController : Controller
     {
+        
+
         [HttpPost]
         [Authorize]
         [Route("")]
